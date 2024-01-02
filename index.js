@@ -1,7 +1,8 @@
 const express = require("express");
 const { postgres } = require("./modules/postgres");
 const { routes } = require("./routes/routes");
-require("dotenv").config();
+const dotenv = require("dotenv");
+dotenv.config();
 
 const server = express();
 
