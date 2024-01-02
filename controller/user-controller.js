@@ -1,6 +1,7 @@
 const { SignUpValidation } = require("../modules/validations");
 const { sendMail } = require("../modules/email");
 const { createToken } = require("../modules/jwt");
+const { createCrypt, verifyCrypt } = require("../modules/bcrypt");
 
 module.exports = class UserController {
   static async UserSignUpPostController(req, res, next) {
@@ -9,11 +10,11 @@ module.exports = class UserController {
 
       const users = await req.db.users.create({
         user_email: data.email,
-        user_password: data.password,
+        user_password: createCrypt(data.password),
       });
 
       await sendMail(
-        `Please click to link: http://localhost/users/verify/${users.dataValues.user_id}`,
+        `Please click to link: http://localhost:5000/v1/users/verify/${users.dataValues.user_id}`,
         data.email
       );
 
@@ -60,6 +61,42 @@ module.exports = class UserController {
       res.json({
         ok: true,
         message: "Account successfully verificed",
+        data: {
+          token,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+      res.status(400).json({
+        ok: false,
+        message: error + "",
+      });
+    }
+  }
+
+  static async UserLoginPostController(req, res, next) {
+    try {
+      const data = await SignUpValidation(req.body);
+
+      const user = await req.db.users.findOne({
+        where: {
+          user_email: data.email,
+        },
+      });
+
+      if (!user) throw new Error("User not found");
+
+      const isTrust = verifyCrypt(data.password, user.dataValues.user_password);
+
+      if (!isTrust) throw new Error("Password is incorrect!");
+
+      const token = createToken({
+        user_id: user.dataValues.user_id,
+      });
+
+      res.json({
+        ok: true,
+        message: "Logged successfully",
         data: {
           token,
         },
