@@ -19,6 +19,6 @@ module.exports.sendMail = async (text, email) => {
 
     return info;
   } catch (error) {
-    console.log("Shu ishlamadi " + error);
+    console.log("Email error: " + error);
   }
 };
